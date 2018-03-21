@@ -18,3 +18,13 @@ This repo contains simplified and trimmed down version of tensorflow's example i
 
 The `scripts` directory contains helpers for the codelab. Some of these come from the main TensorFlow repository, and are included here so you can use them without also downloading the main TensorFlow repo (they are not part of the TensorFlow `pip` installation).
 
+# how to train model
+
+python scripts/retrain.py  --image_dir ./tf_files/flower_photos
+
+
+
+
+# how to test image
+
+python scripts/label_image.py --graph=tf_files/retrained_graph.pb --image=tf_files/flower_photos/daisy/3475870145_685a19116d.jpg
