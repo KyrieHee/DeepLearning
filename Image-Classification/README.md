@@ -28,5 +28,5 @@ python scripts/retrain.py  --image_dir ./tf_files/flower_photos
 # how to test image
 ```
 python scripts/label_image.py --graph=tf_files/retrained_graph.pb \
--image=tf_files/flower_photos/daisy/3475870145_685a19116d.jpg
+        -image=tf_files/flower_photos/daisy/3475870145_685a19116d.jpg
 ```
