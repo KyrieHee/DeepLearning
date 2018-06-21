@@ -126,9 +126,11 @@ for i in range(len(imgs)):
 
 结节的中心位于img_array的v_center[2]切片中。我们将节点信息传递给make_mask（）函数，并复制生成的掩码给v_center[2]切片图像以及其上方和下方的切片图像。
 左上角的图像是扫描切片。 右上角的图像是节点掩码（mask）。左下角的图像是掩码切片，突出显示了结节。
-![图1](./images/2.png)
+
+![图1](./images/1.png)
 
 结节的近景图像
+
 ![图2](./images/2.png)
 
 
@@ -434,10 +436,10 @@ def createFeatureDataset(nodfiles=None):
         feature_array[i] = getRegionMetricRow(nodfile)
     np.save("dataY.npy", truth_metric)
     np.save("dataX.npy", feature_array)
-``` 
-
+```
+=======
 一旦我们创建了特征向量，我们将它们加载到一些简单的分类模型中，看看实验结果。 我们选择随机森林和XGBoost基于我们的特征工程创建一些模型。
-
+=======
 ```
 from sklearn import cross_validation
 from sklearn.cross_validation import StratifiedKFold as KFold
@@ -482,7 +484,10 @@ print "Predicting all negative"
 y_pred = Y*0
 print classification_report(Y, y_pred, target_names=["No Cancer", "Cancer"])
 print("logloss",logloss(Y, y_pred))
-```  
+``` 
+
+
+
 
 结果显示了建模的效果
 
