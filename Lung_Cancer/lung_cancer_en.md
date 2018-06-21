@@ -497,30 +497,7 @@ print("logloss",logloss(Y, y_pred))
 
 We compare the results for Random forest, XGBoost, and two models consisting of only predicting cancer and only predicting no cancer.
 
-Random Forest
-             precision    recall  f1-score   support
-  No Cancer       0.81      0.98      0.89       463
-     Cancer       0.17      0.02      0.03       107
-avg / total       0.69      0.80      0.73       570
-('logloss', 0.52600332670816652)
-XGBoost
-             precision    recall  f1-score   support
-  No Cancer       0.83      0.86      0.84       463
-     Cancer       0.27      0.21      0.24       107
-avg / total       0.72      0.74      0.73       570
-('logloss', 0.5700685138621493)
-Predicting all positive
-             precision    recall  f1-score   support
-  No Cancer       0.00      0.00      0.00       463
-     Cancer       0.19      1.00      0.32       107
-avg / total       0.04      0.19      0.06       570
-('logloss', 28.055831025357818)
-Predicting all negative
-             precision    recall  f1-score   support
-  No Cancer       0.81      1.00      0.90       463
-     Cancer       0.00      0.00      0.00       107
-avg / total       0.66      0.81      0.73       570
-('logloss', 6.4835948671148085)
+![图11](./images/11.png)
 
 ### Where to go next?
 We've given you a framework for approaching this problem that combines a deep learning based segmentation approach with an older computer vision approach of hand designed features. From here you have lots of ways to improve the u-net model with more data, or additional preprocessing. The classification piece could be replaced by a another convolutional nueral net or you could take more advantage of the 3d nature of the nodules that we've mostly considered as independant 2d slices here.
