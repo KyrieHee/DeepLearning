@@ -129,12 +129,11 @@ for i in range(len(imgs)):
 ```
 
 The image on the top left is the scan slice. The image on the top right is the node mask. The image on the bottom left is the masked slice, highlighting the node.
-
+![图1](../images/1.png)
 
 
 Close up on the nodule :
-
-
+![图2](../images/2.png)
 
 
 ### Isolation of the Lung Region of Interest to Narrow Our Nodule Search
@@ -321,7 +320,7 @@ will compile and return the model and tell keras to save the model weights durin
 model.load_weights('unet.hdf5')
 ```
 ### Training the Segmenter
-Calling LUNA_train_unet.py from the command line will automatically attempt to load a unet.hdf5 file from the current directory, train it according to the parameters set by the line
+Calling ***LUNA_train_unet.py*** from the command line will automatically attempt to load a unet.hdf5 file from the current directory, train it according to the parameters set by the line
 
 ```
 model.fit(imgs_train, imgs_mask_train, batch_size=2, nb_epoch=20, 
@@ -350,17 +349,25 @@ An example segmentation is given here for the three slices taken from a patient 
 
 ### Training a Classifier for Identifying Cancer
 Now we are ready to begin training a classifier using our image segmentation from the previous sections to generate features.
+
 The Data Science Bowl training data set must be fed through the segmenter, which can be done largely by reusing the code used to treat the LUNA data. There are two points where this deviates.
+
 First of all, the DSB data is in dicom format, which can be read using the pydicom module
 
 ```
 import dicom
 dc = dicom.read_file(filename)
 img = dc.pixel_array
+```
+
 Secondly, in order to locate nodes in the scans, every layer of the scan must be run through the segmenter, and thus every layer must also be subject to the image processing to mask off the ROI. This can be a very time consuming process.
-Simple classifier based on nodule features
+
+### Simple classifier based on nodule features
 We start by characterizing some of the features of the nodule maps and putting them into a feature vector that we can use for classification purposes. Our list of features is by no means exhaustive and is meant to illustrate the process of developing some meterics that could be used to characterize the segmented regions where nodules are likely.
+
 We encourage you to play with adding some new features, explore convolutional models for extracting features from the region of interest directly. We have included some features about the average size, morphology, and position within the image for use in model building.
+
+```
 def getRegionMetricRow(fname = "nodules.npy"):
     seg = np.load(fname)
     nslices = seg.shape[0]
@@ -475,6 +482,7 @@ print("logloss",logloss(Y, y_pred))
 ```
 
 We compare the results for Random forest, XGBoost, and two models consisting of only predicting cancer and only predicting no cancer.
+
 Random Forest
              precision    recall  f1-score   support
   No Cancer       0.81      0.98      0.89       463
@@ -500,6 +508,6 @@ Predicting all negative
 avg / total       0.66      0.81      0.73       570
 ('logloss', 6.4835948671148085)
 
-Where to go next?
+### Where to go next?
 We've given you a framework for approaching this problem that combines a deep learning based segmentation approach with an older computer vision approach of hand designed features. From here you have lots of ways to improve the u-net model with more data, or additional preprocessing. The classification piece could be replaced by a another convolutional nueral net or you could take more advantage of the 3d nature of the nodules that we've mostly considered as independant 2d slices here.
 
