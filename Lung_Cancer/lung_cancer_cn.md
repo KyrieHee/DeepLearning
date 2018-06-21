@@ -483,7 +483,7 @@ print "Predicting all negative"
 y_pred = Y*0
 print classification_report(Y, y_pred, target_names=["No Cancer", "Cancer"])
 print("logloss",logloss(Y, y_pred))
-``` 
+```
 
 建模效果如下：
 ![图11](./images/11.png)
