@@ -484,7 +484,7 @@ y_pred = Y*0
 print classification_report(Y, y_pred, target_names=["No Cancer", "Cancer"])
 print("logloss",logloss(Y, y_pred))
 ```
-
+我们比较随机森林，XGBoost的结果，以及预测患有癌症和预测不患有癌症的两个模型的结果。
 建模效果如下：
 
 ![图11](./images/11.png)
