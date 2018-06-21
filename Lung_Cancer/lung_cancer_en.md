@@ -174,6 +174,8 @@ plt.hist(img.flatten(),bins=200)
 The underflow peak near -1.5 is the black out-of-scanner part of the image. The peaks around 0.0 are the background and lung interior and the wide clumps from 1.0 to 2.0 are the non-lung-tissue and bone. The structure of this histogram varies throughout the data set. Two images are shown below that are typical of the data set. The one on the left has the same black background around a grey circular region of scanner data as is present in img. That black background is not present in the image on the right, making for a very different pixel value histogram.
 
 We have to make sure that we set our threshold between the lung pixel values and the denser tissue pixel values. To do this, we reset the pixels with the minimum value to the average pixel value near the center of the picture and perform kmeans clustering with k=2. This seems to work well for both scenarios.
+
+```
 middle = img[100:400,100:400] 
 mean = np.mean(middle)  
 max = np.max(img)
@@ -185,9 +187,11 @@ kmeans = KMeans(n_clusters=2).fit(np.reshape(middle,[np.prod(middle.shape),1]))
 centers = sorted(kmeans.cluster_centers_.flatten())
 threshold = np.mean(centers)
 thresh_img = np.where(img<threshold,1.0,0.0)  # threshold the image
+```
+
 Which produces a satisfactory separation of regions for both types of images and eliminates the black halo in the one on the left
 
-Erosion and Dilation
+### Erosion and Dilation
 We then use an erosion and dilation to fill in the incursions into the lungs region by radio-opaque tissue, followed by a selection of the regions based on the bounding box sizes of each region. The initial set of regions looks like
 
 ```
@@ -198,7 +202,7 @@ label_vals = np.unique(labels)
 plt.imshow(labels)
 ```
 
-Cutting non-ROI Regions
+### Cutting non-ROI Regions
 The cuts applied to each region bounding box were determined empirically and seem to work well for the LUNA data, but may not be generally applicable
 
 
@@ -223,8 +227,8 @@ for N in good_labels:
 mask = morphology.dilation(mask,np.ones([10,10])) # one last dilation
 plt.imshow(mask,cmap='gray')
 ```
-Applying the ROI Masks
-The next step in LUNA_segment_lung_ROI.py is applying the mask of the lung ROI to each of the images, cropping down to the bounding square of the lungs ROI, and then resizing the resulting image to 512 X 512.
+### Applying the ROI Masks
+The next step in ***LUNA_segment_lung_ROI.py*** is applying the mask of the lung ROI to each of the images, cropping down to the bounding square of the lungs ROI, and then resizing the resulting image to 512 X 512.
 
 ```
 masks = np.load(working_path+"lungmask_0.py")
@@ -232,28 +236,29 @@ imgs = np.load(working_path+"images_0.py")
 imgs = masks*imgs
 ```
 ...crop to bounding square and resize to 512 X 512...
+
 Then we perform some final pixel normalization. This is because the mask sends the non ROI area in the picture to 0, and that operation is not sensitive to the pixel value distribution. To fix this, we get the mean and standard deviation of the masked region and send the background (now zero) to the lower end of the pixel distribution (-1.2*stdev, which was chosen empirically).
 
 ```
-#
 #renormalizing the masked image (in the mask region)
-#
+
 new_mean = np.mean(img[mask>0])  
 new_std = np.std(img[mask>0])
-#
+
 #Pushing the background color up to the lower end
 #of the pixel range for the lungs
-#
 old_min = np.min(img)       # background color
 img[img==old_min] = new_mean-1.2*new_std   # resetting backgound color
 img = img-new_mean
 img = img/new_std
+```
+
 The final product is a set of lungs that is ready to be compiled into our training example set.
 
 These images and the correspondingly trimmed and rescaled masks are randomized and sent to a single file that contains a numpy array of dimension [<num_images>,1,512,512]. The 1 is important as the U-net is enabled for multiple channels.
-#
+
+```
 #Writing out images and masks as 1 channel arrays for input into network
-#
 final_images = np.ndarray([num_images,1,512,512],dtype=np.float32)
 final_masks = np.ndarray([num_images,1,512,512],dtype=np.float32)
 for i in range(num_images):
@@ -265,7 +270,10 @@ np.save(working_path+"trainImages.npy",final_images[rand_i[test_i:]])
 np.save(working_path+"trainMasks.npy",final_masks[rand_i[test_i:]])
 np.save(working_path+"testImages.npy",final_images[rand_i[:test_i]])
 np.save(working_path+"testMasks.npy",final_masks[rand_i[:test_i]])
+```
+
 You can check the ROI isolationg by examining the lung masks and the original files:
+```
 imgs = np.load(working path+'images_0.npy')
 lungmask = np.load(working_path+'lungmask_0.npy')
 for i in range(len(imgs)):
@@ -278,9 +286,11 @@ for i in range(len(imgs)):
     raw_input("hit enter to cont : ")
 ```
 
-Dice Ceofficient Cost function for Segmentation
+### Dice Ceofficient Cost function for Segmentation
 The network we'll be using is the U-net linked to the beginning of the tutorial which uses the keras framework. The loss function is the dice coefficient https://en.wikipedia.org/wiki/S%C3%B8rensen%E2%80%93Dice_coefficient comparing the predicted and actual node mask.
-The following code snippets are all taken from LUNA_train_unet.py
+
+The following code snippets are all taken from ***LUNA_train_unet.py***
+
 The loss function is as follows:
 
 ```
@@ -297,22 +307,29 @@ def dice_coef_loss(y_true, y_pred):
 ```
 
 Which is similar to the metric used to evaluate the Ultrasound Nerve Segmentation challenge that this network was originally written for (once again, see the link at the beginning of this tutorial).
-Loading the Segmenter
+
+### Loading the Segmenter
 The function call
+```
 model = get_unet() 
 model_checkpoint = ModelCheckpoint('unet.hdf5', monitor='loss', save_best_only=True)
+```
+
 will compile and return the model and tell keras to save the model weights during checkpoints. If you want to load the best weights from a previous training session or use the weights included in this tutorial's repo, load the weight file with the line
 
 ```
 model.load_weights('unet.hdf5')
 ```
-Training the Segmenter
+### Training the Segmenter
 Calling LUNA_train_unet.py from the command line will automatically attempt to load a unet.hdf5 file from the current directory, train it according to the parameters set by the line
 
 ```
 model.fit(imgs_train, imgs_mask_train, batch_size=2, nb_epoch=20, 
            verbose=1, shuffle=True,callbacks=[model_checkpoint])
+```
 in the script, and make predictions on the test set.
+
+```
 num_test = len(imgs_test)
 imgs_mask_test = np.ndarray([num_test,1,512,512],dtype=np.float32)
 for i in range(num_test):
@@ -326,10 +343,12 @@ print("Mean Dice Coeff : ",mean)
 ```
 
 The model.predict() function can take more than one case at a time, but that can quickly overload a GPU, so we are looping over individual cases.
+
 The final results for this tutorial were produced using a multi-GPU machine using TitanX's. For a home GPU computation benchmark, a personal set up with a GTX970 we were able to run 20 epochs with a training set size of 320 and batch size of 2 in about an hour. We started obtaing reasonable nodule mask predictions after about 3 hours of training once the reported loss value approached 0.3.
+
 An example segmentation is given here for the three slices taken from a patient scan. The perfect circle is the "true" node mask from the LUNA annotationc.csv file, and the red is the predicted node region from the segmenter. The original image is given in the top right.
 
-Training a Classifier for Identifying Cancer
+### Training a Classifier for Identifying Cancer
 Now we are ready to begin training a classifier using our image segmentation from the previous sections to generate features.
 The Data Science Bowl training data set must be fed through the segmenter, which can be done largely by reusing the code used to treat the LUNA data. There are two points where this deviates.
 First of all, the DSB data is in dicom format, which can be read using the pydicom module
