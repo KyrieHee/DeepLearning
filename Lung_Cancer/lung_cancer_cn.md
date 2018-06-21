@@ -438,8 +438,7 @@ def createFeatureDataset(nodfiles=None):
     np.save("dataX.npy", feature_array)
 ```
 
-* 一旦我们创建了特征向量，我们将它们加载到一些简单的分类模型中，看看实验结果。 我们选择随机森林和XGBoost基于我们的特征工程创建一些模型。
-
+一旦我们创建了特征向量，我们将它们加载到一些简单的分类模型中，看看实验结果。 我们选择随机森林和XGBoost基于我们的特征工程创建一些模型。
 ```
 from sklearn import cross_validation
 from sklearn.cross_validation import StratifiedKFold as KFold
@@ -486,12 +485,8 @@ print classification_report(Y, y_pred, target_names=["No Cancer", "Cancer"])
 print("logloss",logloss(Y, y_pred))
 ``` 
 
-
-
-
-结果显示了建模的效果
-
+建模效果如下：
 ![图11](./images/11.png)
 
-下一步如何改进？
+### 下一步如何改进？
 我们为您提供了一个解决这个问题的框架，将基于深度学习的分割方法与旧的计算机视觉方法结合在一起。 根据这些内容您可以通过更多数据或其他预处理方法来改进u-net模型。 分类片段可以由另一个卷积网络替代，我们普遍将图像作为独立的2D切片来处理，或许您可以考虑更多地利用结节的3d性质。
