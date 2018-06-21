@@ -129,10 +129,12 @@ for i in range(len(imgs)):
 ```
 
 The image on the top left is the scan slice. The image on the top right is the node mask. The image on the bottom left is the masked slice, highlighting the node.
+
 ![图1](../images/1.png)
 
 
 Close up on the nodule :
+
 ![图2](../images/2.png)
 
 
@@ -152,6 +154,7 @@ These steps are found in ***LUNA_segment_lung_ROI.py***
 The arrays were loaded as dtype = np.float64 because KMeans in sklearn has a bug related to the precision of the input to KMeans.
 We'll walk through the steps of isolating the lung ROI with img, which is a 512 X 512 slice from the set we extracted from the LUNA 2016 data, which looks like:
 
+![图3](../images/3.png)
 
 
 
@@ -167,10 +170,12 @@ img = img/std
 plt.hist(img.flatten(),bins=200)
 ```
 
-
+![图4](../images/4.png)
 
 
 The underflow peak near -1.5 is the black out-of-scanner part of the image. The peaks around 0.0 are the background and lung interior and the wide clumps from 1.0 to 2.0 are the non-lung-tissue and bone. The structure of this histogram varies throughout the data set. Two images are shown below that are typical of the data set. The one on the left has the same black background around a grey circular region of scanner data as is present in img. That black background is not present in the image on the right, making for a very different pixel value histogram.
+
+![图5](../images/5.png)
 
 We have to make sure that we set our threshold between the lung pixel values and the denser tissue pixel values. To do this, we reset the pixels with the minimum value to the average pixel value near the center of the picture and perform kmeans clustering with k=2. This seems to work well for both scenarios.
 
@@ -190,6 +195,8 @@ thresh_img = np.where(img<threshold,1.0,0.0)  # threshold the image
 
 Which produces a satisfactory separation of regions for both types of images and eliminates the black halo in the one on the left
 
+![图6](../images/6.png)
+
 ### Erosion and Dilation
 We then use an erosion and dilation to fill in the incursions into the lungs region by radio-opaque tissue, followed by a selection of the regions based on the bounding box sizes of each region. The initial set of regions looks like
 
@@ -200,6 +207,7 @@ labels = measure.label(dilation)
 label_vals = np.unique(labels)
 plt.imshow(labels)
 ```
+![图7](../images/7.png)
 
 ### Cutting non-ROI Regions
 The cuts applied to each region bounding box were determined empirically and seem to work well for the LUNA data, but may not be generally applicable
@@ -226,6 +234,8 @@ for N in good_labels:
 mask = morphology.dilation(mask,np.ones([10,10])) # one last dilation
 plt.imshow(mask,cmap='gray')
 ```
+![图8](../images/8.png)
+
 ### Applying the ROI Masks
 The next step in ***LUNA_segment_lung_ROI.py*** is applying the mask of the lung ROI to each of the images, cropping down to the bounding square of the lungs ROI, and then resizing the resulting image to 512 X 512.
 
@@ -253,6 +263,8 @@ img = img/new_std
 ```
 
 The final product is a set of lungs that is ready to be compiled into our training example set.
+
+![图9](../images/9.png)
 
 These images and the correspondingly trimmed and rescaled masks are randomized and sent to a single file that contains a numpy array of dimension [<num_images>,1,512,512]. The 1 is important as the U-net is enabled for multiple channels.
 
@@ -346,6 +358,8 @@ The model.predict() function can take more than one case at a time, but that c
 The final results for this tutorial were produced using a multi-GPU machine using TitanX's. For a home GPU computation benchmark, a personal set up with a GTX970 we were able to run 20 epochs with a training set size of 320 and batch size of 2 in about an hour. We started obtaing reasonable nodule mask predictions after about 3 hours of training once the reported loss value approached 0.3.
 
 An example segmentation is given here for the three slices taken from a patient scan. The perfect circle is the "true" node mask from the LUNA annotationc.csv file, and the red is the predicted node region from the segmenter. The original image is given in the top right.
+
+![图10](../images/10.png)
 
 ### Training a Classifier for Identifying Cancer
 Now we are ready to begin training a classifier using our image segmentation from the previous sections to generate features.
