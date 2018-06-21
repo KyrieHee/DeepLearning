@@ -26,10 +26,11 @@ Our code for the network was based on a turorial posted by Marko Jocic on the Ka
 The images we'll be predicting cancer diagnoses on are scans from low-dose helical computed tomography (CT). The appearance on nodules within the CT scan indicate the possibility of cancer, and we will need training examples with marked nodules in order train the U Net to find these nodules. Rather than hand label images, we turn to the Lung Nodule Analysis 2016 (LUNA2016) challenge which has made available CT images with annotated nodule locations. We will first use the LUNA data set to generate an appropriate training set for our U-Net. We will use these examples to train our supervised segmenter.
 
 ### Constructing a training set from the LUNA 2016 data
-We are going to use the nodule locations as given in annotations.csv and extract three transverse slices that contain the largest nodule from each patient scan. Masks will be created for those slices based on the nodule dimensions given in annotations.csv. The output of this file will be two files for each patient scan: a set of images and a set of corresponding nodule masks. The data from the LUNA 2016 challenge can be found at here.
+We are going to use the nodule locations as given in annotations.csv and extract three transverse slices that contain the largest nodule from each patient scan. Masks will be created for those slices based on the nodule dimensions given in annotations.csv. The output of this file will be two files for each patient scan: a set of images and a set of corresponding nodule masks. The data from the LUNA 2016 challenge can be found at [here]( https://luna16.grand-challenge.org/).
+
 First we import the necessary tools and find the largest nodule in the patient scan. There are multiple nodule listings for some patients in annotations.csv. We're using a pandas DataFrame named df_nodeto keep track of the case numbers and the node information. The node information is an (x,y,z) coordinate in mm using a coordinate system defined in the .mhd file.
 
-The following snippets of code are from LUNA_mask_extraction.py:
+The following snippets of code are from **LUNA_mask_extraction.py**:
 
 ```
 import SimpleITK as sitk
@@ -38,7 +39,7 @@ import csv
 from glob import glob
 import pandas as pd
 file_list=glob(luna_subset_path+"*.mhd")
-#####################
+
 #Helper function to get rows in data frame associated 
 #with each file
 def get_filename(case):
@@ -46,15 +47,13 @@ def get_filename(case):
     for f in file_list:
         if case in f:
             return(f)
-#
+
 #The locations of the nodes
 df_node = pd.read_csv(luna_path+"annotations.csv")
 df_node["file"] = df_node["seriesuid"].apply(get_filename)
 df_node = df_node.dropna()
-#####
-#
+
 #Looping over the image files
-#
 fcount = 0
 for img_file in file_list:
     print "Getting mask for image file %s" % img_file.replace(luna_subset_path,"")
@@ -67,16 +66,23 @@ for img_file in file_list:
         diam = mini_df["diameter_mm"].values[biggest_node]
 ```
 
-Getting the nodule position in the mhd files
+### Getting the nodule position in the mhd files
 The nodule locations are given in terms of millimeters relative to a coordinate system defined by the CT scanner. The image data is given as a varying length stack of 512 X 512 arrays. In order to translate the voxel position to the world coordinate system, one needs to know the real world position of the [0,0,0] voxel and the voxel spacing in mm.
+
+
 To find the voxel coordinates of a nodule, given its real world position, we use the GetOrigin() and GetSpacing() method of the itk image object:
+```
 itk_img = sitk.ReadImage(img_file) 
 img_array = sitk.GetArrayFromImage(itk_img) # indexes are z,y,x (notice the ordering)
 center = np.array([node_x,node_y,node_z])   # nodule center
 origin = np.array(itk_img.GetOrigin())      # x,y,z  Origin in world coordinates (mm)
 spacing = np.array(itk_img.GetSpacing())    # spacing of voxels in world coor. (mm)
 v_center =np.rint((center-origin)/spacing)  # nodule center in voxel space (still x,y,z ordering)
+```
+
 The center of the nodule is located in the v_center[2] slice of the img_array. We pass the node information to the make_mask() function and copy the generated masks and the image for the v_center[2]slice and the slice above and below it.
+
+```
 i = 0
 for i_z in range(int(v_center[2])-1,int(v_center[2])+2):
     mask = make_mask(center,diam,i_z*spacing[2]+origin[2],width,height,spacing,origin)
@@ -85,7 +91,11 @@ for i_z in range(int(v_center[2])-1,int(v_center[2])+2):
     i+=1
 np.save(output_path+"images_%d.npy" % (fcount) ,imgs)
 np.save(output_path+"masks_%d.npy" % (fcount) ,masks)
+```
+
 In the make_mask() function it is worth noting that the mask coordinates have to match the ordering of the array coordinates. The x and y ordering is flipped. See the next to last line in the below code:
+
+```
     def make_mask(center,diam,z,width,height,spacing,origin):
     ...
     for v_x in v_xrange:
@@ -95,8 +105,12 @@ In the make_mask() function it is worth noting that the mask coordinates have 
             if np.linalg.norm(center-np.array([p_x,p_y,z]))<=diam:
                 mask[int((p_y-origin[1])/spacing[1]),int((p_x-origin[0])/spacing[0])] = 1.0
     return(mask)
+```
+
 Should we collect more slices from each scan?
+
 Since the nodule locations are defined in terms of spheres, and the nodules are irregularly shaped, slices near the edges of the spheres may contain no nodule tissue. Using such slices would contaminate the training set with false positives. For this segmentation project, there is probably an optimal number of slices through a nodule that one should incorporate. For simplicity, we stick to 3 and only pull the slices centered on the largest nodule.
+
 Check to make sure the nodule masks look as expected:
 
 ```
@@ -116,10 +130,16 @@ for i in range(len(imgs)):
 
 The image on the top left is the scan slice. The image on the top right is the node mask. The image on the bottom left is the masked slice, highlighting the node.
 
+
+
 Close up on the nodule :
 
-Isolation of the Lung Region of Interest to Narrow Our Nodule Search
+
+
+
+### Isolation of the Lung Region of Interest to Narrow Our Nodule Search
 The node masks seem to be constructed properly. The next step is to isolate the lungs in the images. We'll need to import some skimage image processing modules for this step. The general strategy is to threshold the image to isolate the regions within the image, and then to identify which of those regions are the lungs. The lungs have a high constrast with the surrounding tissue, so the thresholding is fairly straightforward. We use some ad-hoc criteria for eliminating the non-lung regions from the image which do not apply equally to all data sets.
+
 In addition to our previous imports, we'll make use of ...
 
 ```
@@ -127,12 +147,18 @@ from skimage import morphology
 from skimage import measure
 from sklearn.cluster import KMeans
 from skimage.transform import resize
-These steps are found in LUNA_segment_lung_ROI.py
+```
+
+These steps are found in ***LUNA_segment_lung_ROI.py***
 The arrays were loaded as dtype = np.float64 because KMeans in sklearn has a bug related to the precision of the input to KMeans.
 We'll walk through the steps of isolating the lung ROI with img, which is a 512 X 512 slice from the set we extracted from the LUNA 2016 data, which looks like:
 
-Thresholding
+
+
+
+### Thresholding
 Our first step is to standardize the pixel values and take a look at the intensity distribution
+```
 img = imgs_to_process[i]
 #Standardize the pixel values
 mean = np.mean(img)
@@ -141,6 +167,9 @@ img = img-mean
 img = img/std
 plt.hist(img.flatten(),bins=200)
 ```
+
+
+
 
 The underflow peak near -1.5 is the black out-of-scanner part of the image. The peaks around 0.0 are the background and lung interior and the wide clumps from 1.0 to 2.0 are the non-lung-tissue and bone. The structure of this histogram varies throughout the data set. Two images are shown below that are typical of the data set. The one on the left has the same black background around a grey circular region of scanner data as is present in img. That black background is not present in the image on the right, making for a very different pixel value histogram.
 
