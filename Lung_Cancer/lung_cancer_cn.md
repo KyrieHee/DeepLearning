@@ -437,9 +437,9 @@ def createFeatureDataset(nodfiles=None):
     np.save("dataY.npy", truth_metric)
     np.save("dataX.npy", feature_array)
 ```
-=======
-一旦我们创建了特征向量，我们将它们加载到一些简单的分类模型中，看看实验结果。 我们选择随机森林和XGBoost基于我们的特征工程创建一些模型。
-=======
+
+* 一旦我们创建了特征向量，我们将它们加载到一些简单的分类模型中，看看实验结果。 我们选择随机森林和XGBoost基于我们的特征工程创建一些模型。
+
 ```
 from sklearn import cross_validation
 from sklearn.cross_validation import StratifiedKFold as KFold
