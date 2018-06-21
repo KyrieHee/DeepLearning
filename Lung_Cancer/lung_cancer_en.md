@@ -19,9 +19,9 @@ This tutorial uses python and has the following dependencies
 
 Note: Keras allows multiple backends for use when training. We chose a GPU enabled installation of tensorflow as the backend of Keras.
 
-In order to identify regions with nodules, we will use a U-Net style convolutional network which was designed for segmenting neuronal structures. 
+In order to identify regions with nodules, we will use a [U-Net](https://arxiv.org/abs/1505.04597) style convolutional network which was designed for segmenting neuronal structures. 
 
-Our code for the network was based on a turorial posted by Marko Jocic on the Kaggle forum for the Ultrasound Nerve Segmentation Challenge. 
+Our code for the network was based on a turorial posted by Marko Jocic on the Kaggle forum for the [Ultrasound Nerve Segmentation Challenge](https://www.kaggle.com/c/ultrasound-nerve-segmentation/forums/t/21358/0-57-deep-learning-keras-tutorial). 
 
 The images we'll be predicting cancer diagnoses on are scans from low-dose helical computed tomography (CT). The appearance on nodules within the CT scan indicate the possibility of cancer, and we will need training examples with marked nodules in order train the U Net to find these nodules. Rather than hand label images, we turn to the Lung Nodule Analysis 2016 (LUNA2016) challenge which has made available CT images with annotated nodule locations. We will first use the LUNA data set to generate an appropriate training set for our U-Net. We will use these examples to train our supervised segmenter.
 
