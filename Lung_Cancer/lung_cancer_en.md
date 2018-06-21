@@ -1,13 +1,13 @@
-### U-Net Segmentation Approach to Cancer Diagnosis
+## U-Net Segmentation Approach to Cancer Diagnosis
 written by Jonathan Mulholland and Aaron Sander, Booz Allen Hamilton
 
 In this tutorial, we will show one approach to predicting whether a CT scan is of a patient who either has or will develop cancer within the next 12 months or not.
 
 We will train a network to segment out potentially cancerous nodules and then use the characteristics of that segmentation to make predictions about the diagnosis of the scanned patient within a 12 month time frame.
 
-The code for this tutorial can be found at here.
+The code for this tutorial can be found at [here]( https://github.com/booz-allen-hamilton/DSB3Tutorial).
 
-Dependencies and tools
+### Dependencies and tools
 This tutorial uses python and has the following dependencies
 * numpy
 * scikit-image
@@ -24,7 +24,8 @@ In order to identify regions with nodules, we will use a U-Net style convolution
 Our code for the network was based on a turorial posted by Marko Jocic on the Kaggle forum for the Ultrasound Nerve Segmentation Challenge. 
 
 The images we'll be predicting cancer diagnoses on are scans from low-dose helical computed tomography (CT). The appearance on nodules within the CT scan indicate the possibility of cancer, and we will need training examples with marked nodules in order train the U Net to find these nodules. Rather than hand label images, we turn to the Lung Nodule Analysis 2016 (LUNA2016) challenge which has made available CT images with annotated nodule locations. We will first use the LUNA data set to generate an appropriate training set for our U-Net. We will use these examples to train our supervised segmenter.
-Constructing a training set from the LUNA 2016 data
+
+### Constructing a training set from the LUNA 2016 data
 We are going to use the nodule locations as given in annotations.csv and extract three transverse slices that contain the largest nodule from each patient scan. Masks will be created for those slices based on the nodule dimensions given in annotations.csv. The output of this file will be two files for each patient scan: a set of images and a set of corresponding nodule masks. The data from the LUNA 2016 challenge can be found at here.
 First we import the necessary tools and find the largest nodule in the patient scan. There are multiple nodule listings for some patients in annotations.csv. We're using a pandas DataFrame named df_nodeto keep track of the case numbers and the node information. The node information is an (x,y,z) coordinate in mm using a coordinate system defined in the .mhd file.
 
